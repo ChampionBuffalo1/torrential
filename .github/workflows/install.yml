@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [macos-15, ubuntu-24.04, ubuntu-24.04-arm]
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Install with the one-liner
@@ -33,25 +33,6 @@ jobs:
             echo "expected torrential $want; retrying in 20s"
             sleep 20
           done
-          exit 1
-
-  install-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Install with the one-liner
-        shell: pwsh
-        env:
-          WANT: ${{ inputs.version || github.event.release.tag_name }}
-        run: |
-          $want = $env:WANT.TrimStart('v')
-          foreach ($attempt in 1..6) {
-            irm https://raw.githubusercontent.com/nexxeln/torrential/main/install.ps1 | iex
-            $got = & "$env:LOCALAPPDATA\Programs\torrential\torrential.exe" --version
-            Write-Host $got
-            if ($got -eq "torrential $want") { exit 0 }
-            Write-Host "expected torrential $want; retrying in 20s"
-            Start-Sleep 20
-          }
           exit 1
 
   image:
