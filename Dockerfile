@@ -22,14 +22,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 FROM debian:13-slim
 ARG TARGETARCH
-LABEL org.opencontainers.image.source="https://github.com/nexxeln/torrential" \
+# A fork's image passes its own repository and image name.
+ARG SOURCE=https://github.com/nexxeln/torrential
+ARG IMAGE=ghcr.io/nexxeln/torrential
+LABEL org.opencontainers.image.source="${SOURCE}" \
       org.opencontainers.image.description="Search for a film or show, press Play, and watch it while it downloads." \
       org.opencontainers.image.licenses="MIT"
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=build --chown=1000:1000 /out/data /data
 COPY --chmod=755 image/${TARGETARCH}/torrential /usr/local/bin/torrential
 # Config in /data/config, downloads in /data/Downloads/torrential.
-ENV HOME=/data TORRENTIAL_HOME=/data TORRENTIAL_IMAGE=ghcr.io/nexxeln/torrential
+ENV HOME=/data TORRENTIAL_HOME=/data TORRENTIAL_IMAGE=${IMAGE}
 USER 1000:1000
 WORKDIR /data
 VOLUME /data

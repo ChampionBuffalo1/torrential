@@ -1,0 +1,86 @@
+# A fork's own image: once ci passes on main, build the Linux engine as release.yml does and push
+# ghcr.io/<owner>/torrential:latest, :main and :sha-<commit> for amd64 and arm64. Upstream publishes
+# its image from release.yml on a tag, so this never runs in nexxeln/torrential.
+name: fork-image
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-image
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: >-
+      github.repository != 'nexxeln/torrential' &&
+      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-musl
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          submodules: recursive
+      - uses: ./.github/actions/toolchain
+        with:
+          target: ${{ matrix.target }}
+          kind: build
+      - run: scripts/release.sh
+      - uses: actions/upload-artifact@v7
+        with:
+          name: torrential-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  image:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: torrential-*-linux-musl
+          path: dist
+          merge-multiple: true
+      - name: Put each architecture's binary where the Dockerfile looks for it
+        run: |
+          mkdir -p image/amd64 image/arm64
+          tar -xzf dist/torrential-x86_64-unknown-linux-musl.tar.gz -C image/amd64
+          tar -xzf dist/torrential-aarch64-unknown-linux-musl.tar.gz -C image/arm64
+      - name: Check the amd64 image runs
+        run: |
+          docker build -t torrential:check .
+          docker run --rm torrential:check --version
+      - name: Build the image for amd64 and arm64 and push it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          # GHCR names must be lowercase.
+          image="ghcr.io/$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')/torrential"
+          echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker buildx create --use --driver docker-container
+          docker buildx build --platform linux/amd64,linux/arm64 --push \
+            --build-arg SOURCE="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" --build-arg IMAGE="$image" \
+            -t "$image:latest" -t "$image:main" -t "$image:sha-${SHA::7}" .
+          echo "pushed $image:latest" >> "$GITHUB_STEP_SUMMARY"
