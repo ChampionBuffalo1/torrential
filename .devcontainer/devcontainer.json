@@ -1,0 +1,24 @@
+{
+  "name": "torrential",
+  // Host networking: works around Docker's bridge network failing on this machine until a reboot
+  // into the updated kernel. Remove both lines after rebooting.
+  "build": { "dockerfile": "Dockerfile", "options": ["--network=host"] },
+  "runArgs": ["--network=host"],
+  // VS Code's extra build that matches the user's UID to the host's ignores the options above, so
+  // it fails the same way. The image's user is already UID 1000, the usual host UID.
+  "updateRemoteUserUID": false,
+  "remoteUser": "vscode",
+  // Downloaded crates and the build output live in volumes, so rebuilding the container keeps them.
+  "mounts": [
+    "source=torrential-cargo-registry,target=/home/vscode/.cargo/registry,type=volume",
+    "source=torrential-target,target=${containerWorkspaceFolder}/target,type=volume"
+  ],
+  "postCreateCommand": "sudo chown vscode /home/vscode/.cargo/registry ${containerWorkspaceFolder}/target && git submodule update --init --recursive && cd web && bun install --frozen-lockfile",
+  // The engine's web app and API.
+  "forwardPorts": [47919],
+  "customizations": {
+    "vscode": {
+      "extensions": ["rust-lang.rust-analyzer", "tamasfe.even-better-toml", "bradlc.vscode-tailwindcss"]
+    }
+  }
+}
