@@ -1,6 +1,6 @@
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
-import { type ApiError, artUrl, type Continue, dismissContinue, ENGINE_UNREACHABLE, type Home as HomeData, home } from "../api";
+import { type ApiError, artUrl, type Continue, ENGINE_UNREACHABLE, forgetWatched, type Home as HomeData, home } from "../api";
 import { count, minutesLeft, sentence } from "../lib/format";
 import { useJobs } from "../lib/jobs";
 import { useLatest } from "../lib/useLatest";
@@ -129,7 +129,7 @@ function ContinueCard({ item, onRemove }: { item: Continue; onRemove: () => void
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${title.name} from Continue watching`}
-        className="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-black/60 text-white opacity-0 group-hover/item:opacity-100 hover:bg-black/80 focus-visible:opacity-100 tv:hidden"
+        className="absolute top-2 right-2 grid size-7 cursor-pointer place-items-center rounded-full bg-black/60 text-white opacity-0 group-hover/item:opacity-100 hover:bg-black/80 focus-visible:opacity-100 tv:hidden"
       >
         <XMarkIcon aria-hidden="true" className="size-4" />
       </button>
@@ -168,7 +168,7 @@ function Shelf() {
   }
   const { continue: unfinished, saved } = state.home;
   const remove = (item: Continue) => {
-    dismissContinue(item.title.id).then(() => {
+    forgetWatched(item.video).then(() => {
       const left = { ...state.home, continue: unfinished.filter((other) => other !== item) };
       lastShelf = left;
       setState({ kind: "ready", home: left });
