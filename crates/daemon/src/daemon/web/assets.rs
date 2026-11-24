@@ -49,7 +49,6 @@ fn find_in(files: &'static [(&'static str, &'static [u8])], path: &str) -> Optio
     Some(Asset { bytes, content_type, cache })
 }
 
-/// The media type of the file at `path`, by its extension.
 pub fn content_type(path: &str) -> &'static str {
     let extension = path.rsplit_once('.').map_or("", |(_, extension)| extension);
     TYPES.iter().find(|(e, _)| *e == extension).map_or("application/octet-stream", |(_, t)| t)

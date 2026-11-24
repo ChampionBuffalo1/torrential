@@ -204,7 +204,6 @@ pub struct Listen<'a> {
     pub exposure: crate::config::Exposure,
     /// What the web app hears from the first request, such as the update that started this engine.
     pub news: Option<switch::News>,
-    /// What the web app calls itself, from config.yaml.
     pub branding: crate::config::Branding,
 }
 

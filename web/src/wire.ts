@@ -553,15 +553,7 @@ source?: string,
  */
 ref?: string, file?: number, subtitle?: number, start_at?: number, };
 
-export type Branding = {
-/**
- * The name in place of torrential.
- */
-name: string | null,
-/**
- * The URL of the tab's icon.
- */
-favicon: string | null, };
+export type Branding = { name: string | null, favicon: string | null, };
 
 /** Hex digits every screen shows of an ID. */
 export const SHORT_ID = 6;

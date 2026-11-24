@@ -40,7 +40,6 @@ pub struct Config {
 /// `branding`: what the web app calls itself in its header and browser tab, and the tab's icon.
 #[derive(Clone, PartialEq, Eq, Debug, Default)]
 pub struct Branding {
-    /// The name in place of torrential.
     pub name: Option<String>,
     pub favicon: Option<Favicon>,
 }

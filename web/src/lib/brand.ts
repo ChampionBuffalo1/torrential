@@ -23,7 +23,6 @@ export function useBrandName(): string {
   );
 }
 
-/** Takes the name and icon `branding` in config.yaml sets, if any. */
 export function loadBrand(): void {
   branding().then(
     (brand) => {

@@ -170,9 +170,7 @@ struct VersionReply<'a> {
 #[derive(Serialize)]
 #[cfg_attr(test, derive(ts_rs::TS), ts(rename = "Branding"))]
 struct BrandingReply<'a> {
-    /// The name in place of torrential.
     name: Option<&'a str>,
-    /// The URL of the tab's icon.
     favicon: Option<&'a str>,
 }
 
