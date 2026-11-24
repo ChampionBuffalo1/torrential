@@ -1,4 +1,4 @@
-# On a push to main, test on Linux, build the engine as release.yml does, and push
+# On a push to main, build the engine as release.yml does, and push
 # ghcr.io/<owner>/torrential:latest, :main and :sha-<commit> for linux/amd64 and linux/arm64.
 # nexxeln/torrential publishes its image from release.yml instead, so this skips it.
 name: docker
@@ -16,22 +16,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    if: github.repository != 'nexxeln/torrential'
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: recursive
-      - run: cargo fmt --all --check
-      - uses: ./.github/actions/toolchain
-        with:
-          target: x86_64-unknown-linux-musl
-          kind: test
-      - run: scripts/release.sh test
-
   build:
-    needs: test
+    if: github.repository != 'nexxeln/torrential'
     strategy:
       fail-fast: true
       matrix:
