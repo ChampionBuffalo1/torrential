@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 
 FROM debian:13-slim
 ARG TARGETARCH
-# A fork's image passes its own repository and image name.
+# The repository and image name this build is published under.
 ARG SOURCE=https://github.com/nexxeln/torrential
 ARG IMAGE=ghcr.io/nexxeln/torrential
 LABEL org.opencontainers.image.source="${SOURCE}" \

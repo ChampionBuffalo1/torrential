@@ -1,12 +1,10 @@
-# A fork's own image: once ci passes on main, build the Linux engine as release.yml does and push
-# ghcr.io/<owner>/torrential:latest, :main and :sha-<commit> for amd64 and arm64. Upstream publishes
-# its image from release.yml on a tag, so this never runs in nexxeln/torrential.
-name: fork-image
+# On a push to main, test on Linux, build the engine as release.yml does, and push
+# ghcr.io/<owner>/torrential:latest, :main and :sha-<commit> for linux/amd64 and linux/arm64.
+# nexxeln/torrential publishes its image from release.yml instead, so this skips it.
+name: docker
 
 on:
-  workflow_run:
-    workflows: [ci]
-    types: [completed]
+  push:
     branches: [main]
   workflow_dispatch:
 
@@ -14,14 +12,26 @@ permissions:
   contents: read
 
 concurrency:
-  group: fork-image
+  group: docker
   cancel-in-progress: true
 
 jobs:
+  test:
+    if: github.repository != 'nexxeln/torrential'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - run: cargo fmt --all --check
+      - uses: ./.github/actions/toolchain
+        with:
+          target: x86_64-unknown-linux-musl
+          kind: test
+      - run: scripts/release.sh test
+
   build:
-    if: >-
-      github.repository != 'nexxeln/torrential' &&
-      (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    needs: test
     strategy:
       fail-fast: true
       matrix:
@@ -34,7 +44,6 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
           submodules: recursive
       - uses: ./.github/actions/toolchain
         with:
@@ -55,8 +64,6 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
       - uses: actions/download-artifact@v8
         with:
           pattern: torrential-*-linux-musl
@@ -74,7 +81,7 @@ jobs:
       - name: Build the image for amd64 and arm64 and push it
         env:
           GH_TOKEN: ${{ github.token }}
-          SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SHA: ${{ github.sha }}
         run: |
           # GHCR names must be lowercase.
           image="ghcr.io/$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')/torrential"
