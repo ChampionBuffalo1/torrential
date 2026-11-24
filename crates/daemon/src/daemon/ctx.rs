@@ -54,4 +54,5 @@ pub struct Ctx {
     pub casts: super::cast::Casts,
     /// The Torznab indexers in config.yaml.
     pub indexers: super::indexers::Indexers,
+    pub branding: crate::config::Branding,
 }

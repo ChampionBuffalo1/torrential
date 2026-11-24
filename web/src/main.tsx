@@ -5,6 +5,7 @@ import { DevicesPage } from "./devices/DevicesPage";
 import { DownloadsPage } from "./downloads/DownloadsPage";
 import { Home } from "./home/Home";
 import "./index.css";
+import { loadBrand } from "./lib/brand";
 import { useRemote } from "./lib/remote";
 import { isTv } from "./lib/tv";
 import { Player } from "./player/Player";
@@ -44,6 +45,7 @@ function App() {
 }
 
 document.documentElement.toggleAttribute("data-tv", isTv());
+loadBrand();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

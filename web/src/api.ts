@@ -44,6 +44,7 @@
 // The engine:
 //
 //   GET  /api/version                                      Version
+//   GET  /api/branding                                     Branding
 //
 // Play on TV. A paired phone may cast and work the remote too:
 //
@@ -55,6 +56,7 @@
 import type {
   AttemptEvent,
   AudioTrack,
+  Branding,
   Cast,
   CastAction,
   CastStart,
@@ -491,6 +493,10 @@ export function setSaved(title: string, saved: boolean): Promise<boolean> {
 
 export function home(signal?: AbortSignal): Promise<Home> {
   return request<Home>("/api/home", { signal });
+}
+
+export function branding(): Promise<Branding> {
+  return request<Branding>("/api/branding");
 }
 
 export function version(signal?: AbortSignal): Promise<Version> {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Release, SearchResult, SourceReport } from "../api";
+import { setTitle } from "../lib/brand";
 import { count, list, sentence } from "../lib/format";
 import { isVideo } from "../lib/release";
 import { navigate, torrentsPath, watchPath } from "../router";
@@ -92,7 +93,7 @@ export function SearchPage({ query, everything }: Props) {
   const { text } = search;
 
   useEffect(() => {
-    document.title = query ? `${query} · torrential` : "torrential";
+    setTitle(query || null);
   }, [query]);
 
   const open = (release: Release) => navigate(watchPath(release.id));

@@ -11,7 +11,7 @@ use super::devices::{Me, Offer, Shown};
 use super::online::{Listed, Named, Online};
 use super::play::Playing;
 use super::titles::{Forget, Found, Measured, Play, PlayingLine, Position, Saved};
-use super::{FfmpegLine, Pieces, SearchLine, VersionReply};
+use super::{BrandingReply, FfmpegLine, Pieces, SearchLine, VersionReply};
 use crate::daemon::devices::OFFER;
 use crate::daemon::downloads::{PIECE_RUNS, Served};
 use crate::daemon::media::thumbnail;
@@ -51,6 +51,7 @@ fn declarations(cfg: &Config) -> Vec<String> {
         Shown::decl(cfg),
         Me::decl(cfg),
         Start::decl(cfg),
+        BrandingReply::decl(cfg),
     ]);
     all
 }

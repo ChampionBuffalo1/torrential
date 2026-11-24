@@ -1,3 +1,4 @@
+import { useBrandName } from "../lib/brand";
 import { isActive, useJobs } from "../lib/jobs";
 import { useOnMac } from "../lib/mac";
 import { Link } from "../router";
@@ -10,13 +11,14 @@ const ON_MAC = ["127.0.0.1", "localhost", "[::1]"].includes(location.hostname);
 export function Header({ current }: { current: "search" | "downloads" | "devices" | null }) {
   const { jobs, link } = useJobs();
   const onMac = useOnMac();
+  const brand = useBrandName();
   const active = jobs.filter(isActive).length;
   const item =
     "rounded-lg px-2.5 py-1.5 text-sm font-medium text-soft hover:bg-white/5 hover:text-ink aria-[current=page]:text-ink pointer-coarse:py-3";
   return (
     <header className="flex flex-wrap items-center justify-between gap-x-2 py-4 pointer-coarse:py-2">
       <Link href="/" className="rounded-lg text-base font-semibold tracking-tight text-ink pointer-coarse:py-2.5">
-        torrential
+        {brand}
       </Link>
       {/* A line about the engine. On a phone it takes a row of its own under the navigation. */}
       <div className="min-w-0 max-sm:order-last max-sm:basis-full sm:flex-1">

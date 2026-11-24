@@ -553,6 +553,8 @@ source?: string,
  */
 ref?: string, file?: number, subtitle?: number, start_at?: number, };
 
+export type Branding = { name: string | null, favicon: string | null, };
+
 /** Hex digits every screen shows of an ID. */
 export const SHORT_ID = 6;
 

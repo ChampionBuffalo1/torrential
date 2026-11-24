@@ -228,6 +228,7 @@ impl Harness {
             access: &dir.path().join(TOKEN_FILE),
             exposure: outside.exposure.clone(),
             news: None,
+            branding: Default::default(),
         };
         start(&handle, &db, ports, config(dir.path(), outside), outside.timing, "0.1.0".into(), listen).unwrap()
     }
