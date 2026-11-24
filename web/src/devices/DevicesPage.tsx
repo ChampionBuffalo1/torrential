@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { addDevice, type ApiError, asApiError, type Device, type DeviceList, devices, type PairingOffer, removeDevice } from "../api";
+import { setTitle } from "../lib/brand";
 import { ago, sentence } from "../lib/format";
 import { Button } from "../ui/Button";
 import { Header } from "../ui/Header";
@@ -98,7 +99,7 @@ export function DevicesPage() {
   };
 
   useEffect(() => {
-    document.title = "Devices · torrential";
+    setTitle("Devices");
     void apply(devices());
     const clock = setInterval(() => setNow(Date.now() / 1000), 1000);
     const poll = setInterval(() => void apply(devices()), POLL_MS);

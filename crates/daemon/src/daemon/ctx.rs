@@ -54,4 +54,6 @@ pub struct Ctx {
     pub casts: super::cast::Casts,
     /// The Torznab indexers in config.yaml.
     pub indexers: super::indexers::Indexers,
+    /// What the web app calls itself, from config.yaml.
+    pub branding: crate::config::Branding,
 }

@@ -1,6 +1,7 @@
 import { XMarkIcon } from "@heroicons/react/16/solid";
 import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { type ApiError, artUrl, type Continue, ENGINE_UNREACHABLE, forgetWatched, type Home as HomeData, home } from "../api";
+import { setTitle } from "../lib/brand";
 import { count, minutesLeft, sentence } from "../lib/format";
 import { useJobs } from "../lib/jobs";
 import { useLatest } from "../lib/useLatest";
@@ -214,7 +215,7 @@ export function Home({ query }: { query: string }) {
   const search = useSearchText(query, (words) => navigate(homePath(words), { replace: true }));
 
   useEffect(() => {
-    document.title = query ? `${query} · torrential` : "torrential";
+    setTitle(query || null);
   }, [query]);
 
   const keyDown = (event: KeyboardEvent<HTMLInputElement>) => {

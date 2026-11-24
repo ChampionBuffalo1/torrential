@@ -34,6 +34,29 @@ pub struct Config {
     /// The network interface, such as a VPN's `wg0`, that every torrent socket is bound to. The web
     /// app, pairing and casting stay on every network.
     pub torrent_interface: Option<InterfaceName>,
+    pub branding: Branding,
+}
+
+/// `branding`: what the web app calls itself in its header and browser tab, and the tab's icon.
+#[derive(Clone, PartialEq, Eq, Debug, Default)]
+pub struct Branding {
+    /// The name in place of torrential.
+    pub name: Option<String>,
+    pub favicon: Option<Favicon>,
+}
+
+/// The tab's icon: a URL the browser loads, or a file on the engine's machine that it serves.
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum Favicon {
+    Url(String),
+    File(PathBuf),
+}
+
+#[derive(Deserialize, Default)]
+#[serde(default, deny_unknown_fields)]
+struct BrandingFile {
+    name: Option<String>,
+    favicon: Option<Spanned<String>>,
 }
 
 /// How devices outside the home reach the engine.
@@ -131,6 +154,7 @@ struct File {
     torrent_interface: Option<Spanned<String>>,
     public_address: Option<Spanned<String>>,
     trusted_proxies: Vec<Spanned<String>>,
+    branding: BrandingFile,
 }
 
 #[derive(Deserialize, Default)]
@@ -775,6 +799,23 @@ fn parse(text: &str, env: &Env) -> Result<Config, Problem> {
         })
         .collect::<Result<_, _>>()?;
     let exposure = Exposure { server: file.server.unwrap_or_default(), public_address, trusted_proxies };
+    let favicon = file
+        .branding
+        .favicon
+        .map(|Spanned { value: raw, referenced, .. }| {
+            if ["http://", "https://", "data:"].iter().any(|scheme| raw.starts_with(scheme)) {
+                return Ok(Favicon::Url(raw));
+            }
+            let expanded = env.expand_home(Path::new(&raw));
+            if expanded.is_absolute() {
+                Ok(Favicon::File(expanded))
+            } else {
+                let message = format!("branding.favicon {raw:?} must be a URL, an absolute path, or start with ~/");
+                Err((Some(referenced.line()), message))
+            }
+        })
+        .transpose()?;
+    let branding = Branding { name: file.branding.name, favicon };
     let torrent_interface =
         file.torrent_interface.map(|Spanned { value, referenced, .. }| torrent_interface(&value, referenced.line()));
     Ok(Config {
@@ -790,6 +831,7 @@ fn parse(text: &str, env: &Env) -> Result<Config, Problem> {
         plays_max,
         exposure,
         torrent_interface: torrent_interface.transpose()?,
+        branding,
     })
 }
 
@@ -957,6 +999,29 @@ sources:
         assert_eq!(
             max("updates: auto\nplays:\n  max: lots\n"),
             Err((Some(3), "plays.max \"lots\" is not a size; use a form like 20GiB, or none".to_string()))
+        );
+    }
+
+    #[test]
+    fn a_favicon_is_a_url_or_a_file_on_this_machine() {
+        let read = |text: &str| parse(text, &env()).map(|c| c.branding.favicon);
+        assert_eq!(read(""), Ok(None));
+        let url = "https://example.com/icon.png";
+        assert_eq!(read(&format!("branding:\n  favicon: {url}\n")), Ok(Some(Favicon::Url(url.to_string()))));
+        assert_eq!(
+            read("branding:\n  favicon: /config/icon.png\n"),
+            Ok(Some(Favicon::File("/config/icon.png".into())))
+        );
+        assert_eq!(
+            read("branding:\n  favicon: ~/icon.svg\n"),
+            Ok(Some(Favicon::File(Path::new(HOME).join("icon.svg"))))
+        );
+        assert_eq!(
+            read("branding:\n  favicon: icon.png\n"),
+            Err((
+                Some(2),
+                "branding.favicon \"icon.png\" must be a URL, an absolute path, or start with ~/".to_string()
+            ))
         );
     }
 

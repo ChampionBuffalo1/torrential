@@ -1,6 +1,7 @@
 import { BookmarkIcon, PlayIcon, StarIcon } from "@heroicons/react/16/solid";
 import { Fragment, type ReactNode, useEffect } from "react";
 import { artUrl, setSaved, type TitlePage as Title } from "../api";
+import { setTitle } from "../lib/brand";
 import { count, list, minutes, minutesLeft, sentence } from "../lib/format";
 import { Link, navigate, playPath, titlePath } from "../router";
 import { CastButton } from "../cast/CastButton";
@@ -118,7 +119,7 @@ export function TitlePage({ id, season, sources }: Props) {
   const page = state.kind === "ready" ? state.page : null;
 
   useEffect(() => {
-    document.title = page ? `${page.name}${page.year ? ` (${page.year})` : ""} · torrential` : "torrential";
+    setTitle(page ? `${page.name}${page.year ? ` (${page.year})` : ""}` : null);
   }, [page]);
 
   return (

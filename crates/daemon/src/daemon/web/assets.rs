@@ -44,10 +44,15 @@ fn find_in(files: &'static [(&'static str, &'static [u8])], path: &str) -> Optio
         None if path.starts_with(HASHED) => return None,
         None => file(INDEX)?,
     };
-    let extension = route.rsplit_once('.').map_or("", |(_, extension)| extension);
-    let content_type = TYPES.iter().find(|(e, _)| *e == extension).map_or("application/octet-stream", |(_, t)| t);
+    let content_type = content_type(route);
     let cache = if route.starts_with(HASHED) { "public, max-age=31536000, immutable" } else { "no-cache" };
     Some(Asset { bytes, content_type, cache })
+}
+
+/// The media type of the file at `path`, by its extension.
+pub fn content_type(path: &str) -> &'static str {
+    let extension = path.rsplit_once('.').map_or("", |(_, extension)| extension);
+    TYPES.iter().find(|(e, _)| *e == extension).map_or("application/octet-stream", |(_, t)| t)
 }
 
 #[cfg(test)]

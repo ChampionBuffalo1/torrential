@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { type ApiError, asApiError, change, files, type Job, type TorrentFile } from "../api";
+import { setTitle } from "../lib/brand";
 import { bytes, count, percent, rate, sentence, span } from "../lib/format";
 import { STATE_WORDS, useJobs, waiting } from "../lib/jobs";
 import { fileName, fileUrl, readable, savedVideo } from "../lib/release";
@@ -135,7 +136,7 @@ export function DownloadsPage() {
   const [problem, setProblem] = useState<ApiError | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   useEffect(() => {
-    document.title = "Downloads · torrential";
+    setTitle("Downloads");
   }, []);
 
   return (

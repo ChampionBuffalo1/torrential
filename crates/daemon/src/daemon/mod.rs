@@ -204,6 +204,8 @@ pub struct Listen<'a> {
     pub exposure: crate::config::Exposure,
     /// What the web app hears from the first request, such as the update that started this engine.
     pub news: Option<switch::News>,
+    /// What the web app calls itself, from config.yaml.
+    pub branding: crate::config::Branding,
 }
 
 pub fn start(
@@ -267,6 +269,7 @@ pub fn start(
         devices,
         casts: cast::Casts::new(ctx.clone(), ports.tvs),
         indexers: ports.indexers,
+        branding: listen.branding,
     });
     let http = runtime.spawn(http::accept(ctx.clone(), players, reach));
     Ok(Running { ctx, owner: task, engine: thread, http })
@@ -373,7 +376,13 @@ fn serve(env: &Env, paths: &Paths, service: bool, http_port: Option<u16>, server
         let http_ports: Vec<u16> = last.into_iter().chain([wanted]).collect();
         let access = paths.engine_token();
         let news = switch::opening(env, paths);
-        let listen = Listen { ports: &http_ports, access: &access, exposure: settings.exposure.clone(), news };
+        let listen = Listen {
+            ports: &http_ports,
+            access: &access,
+            exposure: settings.exposure.clone(),
+            news,
+            branding: settings.branding.clone(),
+        };
         let running = start(&tokio::runtime::Handle::current(), &db, ports, config, timing, version.clone(), listen)?;
         let (pid, players) = (std::process::id(), running.ctx.http_port);
         if last != Some(players) {

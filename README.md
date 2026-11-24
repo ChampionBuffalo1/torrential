@@ -160,6 +160,9 @@ torrent_interface: wg0        # Linux and macOS: peers, trackers and the DHT use
                               # interface, such as a VPN's, and wait while it is down
 public_address: https://tv.example.com  # the address pairing links use, such as a domain in front of a server
 trusted_proxies: [172.17.0.1, 10.0.0.0/8]  # reverse proxies, by address or CIDR range, whose `X-Forwarded-For` counts
+branding:
+  name: Cinema                # the web app's name in its header and browser tab, default torrential
+  favicon: ~/icon.png         # the browser tab's icon: a file on the engine's machine, or a URL
 ```
 
 ## It never seeds
