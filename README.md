@@ -163,6 +163,7 @@ trusted_proxies: [172.17.0.1, 10.0.0.0/8]  # reverse proxies, by address or CIDR
 branding:
   name: Cinema                # the web app's name in its header and browser tab, default torrential
   favicon: ~/icon.png         # the browser tab's icon: a file on the engine's machine, or a URL
+  icon: ~/logo.svg            # the icon beside the name in the header, the same way
 ```
 
 ## It never seeds

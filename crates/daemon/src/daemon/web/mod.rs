@@ -35,7 +35,7 @@ use super::media::{self, Kept, Made};
 use super::owner::Command;
 use super::search_port::Progress;
 use super::subtitle_port::SubtitlePort;
-use crate::config::{Branding, Favicon};
+use crate::config::{Branding, Image};
 use crate::ffmpeg::fetch::{Fetching, Stage};
 use torrential_core::protocol::METADATA_WAIT;
 
@@ -80,14 +80,8 @@ pub async fn answer(conn: &mut Connection<'_>, request: &Request, route: &str, a
     match (request.method, route) {
         (Method::Get, "subtitles/online/fetch") => return whole(conn, request, VTT, online::vtt(ctx, request)).await,
         (Method::Get, "thumbnail") => return whole(conn, request, "image/jpeg", thumbnail(ctx, request)).await,
-        (Method::Get, "branding/favicon") => {
-            let file = match &ctx.branding.favicon {
-                Some(Favicon::File(file)) => Some(file),
-                _ => None,
-            };
-            let content_type = file.map_or("", |file| assets::content_type(&file.to_string_lossy()));
-            return whole(conn, request, content_type, favicon(file)).await;
-        }
+        (Method::Get, "branding/favicon") => return branding_image(conn, request, &ctx.branding.favicon).await,
+        (Method::Get, "branding/icon") => return branding_image(conn, request, &ctx.branding.icon).await,
         _ => {}
     }
     // A browser that leaves, or stops a request, closes the connection. The work stops with it.
@@ -172,24 +166,40 @@ struct VersionReply<'a> {
 struct BrandingReply<'a> {
     name: Option<&'a str>,
     favicon: Option<&'a str>,
+    icon: Option<&'a str>,
 }
 
 impl<'a> BrandingReply<'a> {
     fn of(branding: &'a Branding) -> Self {
-        let favicon = branding.favicon.as_ref().map(|favicon| match favicon {
-            Favicon::Url(url) => url.as_str(),
-            Favicon::File(_) => "/api/branding/favicon",
-        });
-        Self { name: branding.name.as_deref(), favicon }
+        let url = |image: &'a Option<Image>, route: &'static str| {
+            image.as_ref().map(|image| match image {
+                Image::Url(url) => url.as_str(),
+                Image::File(_) => route,
+            })
+        };
+        Self {
+            name: branding.name.as_deref(),
+            favicon: url(&branding.favicon, "/api/branding/favicon"),
+            icon: url(&branding.icon, "/api/branding/icon"),
+        }
     }
 }
 
-/// `GET /api/branding/favicon`: the icon file config.yaml names.
-async fn favicon(file: Option<&std::path::PathBuf>) -> Result<Arc<Vec<u8>>, Error> {
-    let file = file.ok_or_else(|| Error::new(ErrorCode::NotFound, "config.yaml names no favicon file"))?;
+/// `GET /api/branding/favicon` and `/api/branding/icon`: the image file config.yaml names.
+async fn branding_image(conn: &mut Connection<'_>, request: &Request, image: &Option<Image>) -> io::Result<bool> {
+    let file = match image {
+        Some(Image::File(file)) => Some(file),
+        _ => None,
+    };
+    let content_type = file.map_or("", |file| assets::content_type(&file.to_string_lossy()));
+    whole(conn, request, content_type, image_file(file)).await
+}
+
+async fn image_file(file: Option<&std::path::PathBuf>) -> Result<Arc<Vec<u8>>, Error> {
+    let file = file.ok_or_else(|| Error::new(ErrorCode::NotFound, "config.yaml names no file for this image"))?;
     let bytes = tokio::fs::read(file)
         .await
-        .map_err(|e| Error::new(ErrorCode::NotFound, format!("cannot read the favicon {}: {e}", file.display())))?;
+        .map_err(|e| Error::new(ErrorCode::NotFound, format!("cannot read {}: {e}", file.display())))?;
     Ok(Arc::new(bytes))
 }
 
