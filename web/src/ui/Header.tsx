@@ -1,7 +1,9 @@
 import { useBrand } from "../lib/brand";
+import { useIncognito } from "../lib/incognito";
 import { isActive, useJobs } from "../lib/jobs";
 import { useOnMac } from "../lib/mac";
 import { Link } from "../router";
+import { IncognitoButton } from "./IncognitoButton";
 import { UpdateNotice } from "./UpdateNotice";
 
 /** The engine listens on loopback for the Mac it runs on. A phone or TV reaches it by the Mac's address on the home network. */
@@ -12,11 +14,14 @@ export function Header({ current }: { current: "search" | "downloads" | "devices
   const { jobs, link } = useJobs();
   const onMac = useOnMac();
   const brand = useBrand();
+  const incognito = useIncognito();
   const active = jobs.filter(isActive).length;
   const item =
     "rounded-lg px-2.5 py-1.5 text-sm font-medium text-soft hover:bg-white/5 hover:text-ink aria-[current=page]:text-ink pointer-coarse:py-3";
   return (
-    <header className="flex flex-wrap items-center justify-between gap-x-2 py-4 pointer-coarse:py-2">
+    <header
+      className={`flex flex-wrap items-center justify-between gap-x-2 border-b py-4 pointer-coarse:py-2 ${incognito ? "border-incognito" : "border-transparent"}`}
+    >
       <Link
         href="/"
         className="flex items-center gap-2 rounded-lg text-base font-semibold tracking-tight text-ink pointer-coarse:py-2.5"
@@ -47,7 +52,7 @@ export function Header({ current }: { current: "search" | "downloads" | "devices
           <UpdateNotice link={link} />
         )}
       </div>
-      <nav aria-label="Main" className="-mr-2.5 flex shrink-0 items-center gap-1">
+      <nav aria-label="Main" className="flex shrink-0 items-center gap-1">
         <Link href="/" aria-current={current === "search" ? "page" : undefined} className={item}>
           Search
         </Link>
@@ -60,6 +65,8 @@ export function Header({ current }: { current: "search" | "downloads" | "devices
             Devices
           </Link>
         )}
+        <span aria-hidden="true" className="mx-1 h-5 w-px bg-rule max-sm:hidden" />
+        <IncognitoButton />
       </nav>
     </header>
   );

@@ -22,6 +22,7 @@ import {
   subtitleOffset,
   type SubtitleStyle,
 } from "../lib/storage";
+import { isIncognito } from "../lib/incognito";
 import { isTv } from "../lib/tv";
 import { SAVE_EVERY_MS } from "../wire";
 import { Button } from "../ui/Button";
@@ -263,7 +264,7 @@ function Stage({ element, frame, play, media, onReload, onBack, shown }: Playbac
   const remember = useCallback(
     (seen: boolean) => {
       const save = unsaved.take({ seen });
-      if (save) memory.save(lastTime.current, duration || null, save.starts);
+      if (save && !isIncognito()) memory.save(lastTime.current, duration || null, save.starts);
     },
     [unsaved, memory, duration],
   );

@@ -3,6 +3,7 @@ import { type KeyboardEvent, type ReactNode, type RefObject, useEffect, useRef, 
 import { type ApiError, artUrl, type Continue, ENGINE_UNREACHABLE, forgetWatched, type Home as HomeData, home } from "../api";
 import { setTitle } from "../lib/brand";
 import { count, minutesLeft, sentence } from "../lib/format";
+import { useIncognito } from "../lib/incognito";
 import { useJobs } from "../lib/jobs";
 import { useLatest } from "../lib/useLatest";
 import { SearchField, useSearchText } from "../search/SearchField";
@@ -148,6 +149,7 @@ function Shelf() {
   const [state, setState] = useState<HomeState>(() => (lastShelf ? { kind: "ready", home: lastShelf } : { kind: "loading" }));
   // Asks again when the engine comes back.
   const live = useJobs().link === "live";
+  const incognito = useIncognito();
   useLatest(
     home,
     (found) => {
@@ -167,10 +169,11 @@ function Shelf() {
       </p>
     );
   }
-  const { continue: unfinished, saved } = state.home;
+  const { saved } = state.home;
+  const unfinished = incognito ? [] : state.home.continue;
   const remove = (item: Continue) => {
     forgetWatched(item.video).then(() => {
-      const left = { ...state.home, continue: unfinished.filter((other) => other !== item) };
+      const left = { ...state.home, continue: state.home.continue.filter((other) => other !== item) };
       lastShelf = left;
       setState({ kind: "ready", home: left });
     });
@@ -180,6 +183,14 @@ function Shelf() {
   }
   return (
     <div className="flex flex-col gap-10 pt-2">
+      {saved.length > 0 && (
+        <section aria-labelledby="saved" className="flex flex-col gap-3">
+          <h2 id="saved" className="text-sm font-medium text-pencil">
+            Saved
+          </h2>
+          <TitleGrid titles={saved} label="Saved" />
+        </section>
+      )}
       {unfinished.length > 0 && (
         <section aria-labelledby="continue" className="flex flex-col gap-3">
           <h2 id="continue" className="text-sm font-medium text-pencil">
@@ -193,14 +204,6 @@ function Shelf() {
               <ContinueCard key={item.video} item={item} onRemove={() => remove(item)} />
             ))}
           </ul>
-        </section>
-      )}
-      {saved.length > 0 && (
-        <section aria-labelledby="saved" className="flex flex-col gap-3">
-          <h2 id="saved" className="text-sm font-medium text-pencil">
-            Saved
-          </h2>
-          <TitleGrid titles={saved} label="Saved" />
         </section>
       )}
     </div>
