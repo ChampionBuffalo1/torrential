@@ -41,6 +41,10 @@ fn main() {
     let ssl_file = Path::new(&openssl_lib).join((linking.archive)(ssl));
     let crypto_file = Path::new(&openssl_lib).join((linking.archive)(crypto));
 
+    // Dev builds take libtorrent's Debug build: it compiles faster and in far less memory. Windows
+    // stays on Release, whose C runtime is the one Rust links; Debug would want the debug runtime.
+    let profile =
+        if env::var("PROFILE").as_deref() == Ok("debug") && target_os != "windows" { "Debug" } else { "Release" };
     let mut cmake = cmake::Config::new(&libtorrent_src);
     if target_os == "windows" {
         // CMake's FindOpenSSL sets the library paths from these names under MSVC.
@@ -50,7 +54,7 @@ fn main() {
     }
     let install = cmake
         .generator("Ninja")
-        .profile("Release")
+        .profile(profile)
         .define("BUILD_SHARED_LIBS", "OFF")
         .define("CMAKE_INSTALL_LIBDIR", "lib")
         .define("encryption", "ON")
@@ -63,7 +67,8 @@ fn main() {
         .define("OPENSSL_CRYPTO_LIBRARY", &crypto_file)
         .build();
 
-    let defines = exported_defines(&install.join("lib/cmake/LibtorrentRasterbar/LibtorrentRasterbarTargets.cmake"));
+    let defines =
+        exported_defines(&install.join("lib/cmake/LibtorrentRasterbar/LibtorrentRasterbarTargets.cmake"), profile);
     for required in ["TORRENT_USE_OPENSSL", "TORRENT_ABI_VERSION=100", "TORRENT_USE_RTC=0"] {
         assert!(
             defines.iter().any(|d| d == required),
@@ -117,13 +122,20 @@ fn required_env(name: &str) -> String {
 }
 
 /// The shim must use libtorrent's build definitions to preserve ABI compatibility. CMake's export
-/// lists them on every platform; MSVC builds get no pkg-config file. Entries that are generator
-/// expressions apply only to Debug builds, and libtorrent is built for Release.
-fn exported_defines(targets: &Path) -> Vec<String> {
+/// lists them on every platform; MSVC builds get no pkg-config file. An entry such as
+/// `$<$<CONFIG:Debug>:TORRENT_USE_ASSERTS>` applies only when `profile` is that configuration.
+fn exported_defines(targets: &Path, profile: &str) -> Vec<String> {
     let text = fs::read_to_string(targets).unwrap_or_else(|e| panic!("reading {}: {e}", targets.display()));
     let list = text
         .lines()
         .find_map(|line| line.trim().strip_prefix("INTERFACE_COMPILE_DEFINITIONS "))
         .unwrap_or_else(|| panic!("{} has no INTERFACE_COMPILE_DEFINITIONS", targets.display()));
-    list.trim_matches('"').split(';').filter(|d| !d.contains('$')).map(str::to_owned).collect()
+    let this_config = format!("$<$<CONFIG:{profile}>:");
+    list.trim_matches('"')
+        .split(';')
+        .filter_map(|d| match d.strip_prefix(&this_config) {
+            Some(rest) => rest.strip_suffix('>').map(str::to_owned),
+            None => (!d.contains('$')).then(|| d.to_owned()),
+        })
+        .collect()
 }

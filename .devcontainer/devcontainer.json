@@ -3,7 +3,9 @@
   // Host networking: works around Docker's bridge network failing on this machine until a reboot
   // into the updated kernel. Remove both lines after rebooting.
   "build": { "dockerfile": "Dockerfile", "options": ["--network=host"] },
-  "runArgs": ["--network=host"],
+  // Caps the container so a heavy build fails inside it rather than freezing the host. Swap equal
+  // to memory means the container gets no swap.
+  "runArgs": ["--network=host", "--memory=8g", "--memory-swap=8g", "--cpus=10"],
   // VS Code's extra build that matches the user's UID to the host's ignores the options above, so
   // it fails the same way. The image's user is already UID 1000, the usual host UID.
   "updateRemoteUserUID": false,
@@ -14,11 +16,14 @@
     "source=torrential-target,target=${containerWorkspaceFolder}/target,type=volume"
   ],
   "postCreateCommand": "sudo chown vscode /home/vscode/.cargo/registry ${containerWorkspaceFolder}/target && git submodule update --init --recursive && cd web && bun install --frozen-lockfile",
-  // The engine's web app and API.
-  "forwardPorts": [47919],
+  // With host networking the container's ports are already the host's. Forwarding one makes VS Code
+  // listen on it on the host, which is the same address the forwarder then connects to inside the
+  // container: every connection opens another, without end. So nothing is forwarded.
+  "otherPortsAttributes": { "onAutoForward": "ignore" },
   "customizations": {
     "vscode": {
-      "extensions": ["rust-lang.rust-analyzer", "tamasfe.even-better-toml", "bradlc.vscode-tailwindcss"]
+      "extensions": ["rust-lang.rust-analyzer", "tamasfe.even-better-toml", "bradlc.vscode-tailwindcss"],
+      "settings": { "remote.autoForwardPorts": false }
     }
   }
 }
